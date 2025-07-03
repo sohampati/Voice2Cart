@@ -1,9 +1,9 @@
 from transcription import record
-from input import transcribe_audio
+from input import AudioTranscriber
 def main():
-
+    transcriber = AudioTranscriber()
     audio = record()
-    text = transcribe_audio(path=audio, model_size="medium", compute_type="float32")
+    text = transcriber.transcribe(audio)
     print(f"Transcribed Text: {text}")
 
 

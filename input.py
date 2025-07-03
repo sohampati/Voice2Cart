@@ -1,15 +1,12 @@
 from faster_whisper import WhisperModel
 
-def transcribe_audio(path="audio.wav", model_size="medium", compute_type="float32"):
-    model = WhisperModel(model_size, compute_type=compute_type)
-    segments, _ = model.transcribe(path)
+class AudioTranscriber:
+    def __init__(self, model_size="medium", compute_type="float32"):
+        self.model = WhisperModel(model_size, compute_type=compute_type)
 
-    # Collect the text from each segment
-    full_transcript = ""
-    for segment in segments:
-        full_transcript += segment.text.strip() + " "
-    
-    return full_transcript.strip()
+    def transcribe(self, path="audio.wav"):
+        segments, _ = self.model.transcribe(path)
+        return " ".join(segment.text.strip() for segment in segments).strip()
 
 # Example usage
 
