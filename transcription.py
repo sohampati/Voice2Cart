@@ -1,48 +1,40 @@
 import sounddevice as sd
-from scipy.io.wavfile import write
-from pydub import AudioSegment
-
-import sounddevice as sd
 import numpy as np
 import queue
 import threading
 import sys
 from scipy.io.wavfile import write
+from pydub import AudioSegment
+import os
 
-q = queue.Queue()
-fs = 44100  # Sample rate
-channels = 1
-recording = True
+def record(wav_path="audios/audio.wav", mp3_path="convertedaudios/audio.mp3", fs=44100, channels=1):
+    q = queue.Queue()
+    recording = True
 
-# Callback function to put recorded audio into a queue
-def callback(indata, frames, time, status):
-    if status:
-        print(status, file=sys.stderr)
-    q.put(indata.copy())
+    def callback(indata, frames, time, status):
+        if status:
+            print(status, file=sys.stderr)
+        q.put(indata.copy())
 
-# Threaded input to detect stop
-def input_thread():
-    input("Recording... Press Enter to stop\n")
-    global recording
-    recording = False
+    def input_thread():
+        input("Recording... Press Enter to stop\n")
+        nonlocal recording
+        recording = False
 
-# Start input thread
-threading.Thread(target=input_thread, daemon=True).start()
+    os.makedirs(os.path.dirname(wav_path), exist_ok=True)
 
-# Start audio stream
-with sd.InputStream(samplerate=fs, channels=channels, callback=callback):
+    threading.Thread(target=input_thread, daemon=True).start()
+
     audio_data = []
+    with sd.InputStream(samplerate=fs, channels=channels, callback=callback):
+        while recording:
+            audio_data.append(q.get())
 
-    while recording:
-        audio_data.append(q.get())
-
-# Concatenate all chunks
-audio_np = np.concatenate(audio_data, axis=0)
-
-# Save to WAV
-write("audio.wav", fs, audio_np)
-print("Saved to audio.wav")
+    audio_np = np.concatenate(audio_data, axis=0)
+    write(wav_path, fs, audio_np)
+    print(f"Saved to {wav_path}")
 
 
-# Convert to MP3
-AudioSegment.from_wav("audio.wav").export("audio.mp3", format="mp3")
+    return wav_path
+
+
